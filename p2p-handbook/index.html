@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-sp-mode="scroll">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P2P 数仓变量查询手册 v3.1</title>
+<meta name="description" content="p2p_learning 练习库的变量查询手册：表清单、枚举、字段字典、指标口径、修正版 SQL 模板与 14 条陷阱。">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"TechArticle","headline":"P2P 数仓变量查询手册 v3.1","about":"MySQL 8 p2p_learning 练习库字段与口径手册","inLanguage":"zh-CN"}
+</script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/outfit@5.3.0/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/outfit@5.3.0/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.0/chinese-simplified-500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5.3.0/400.css">
+<style>
+:root{
+  --bg:#ffffff;
+  --bg-soft:#f8f9fb;
+  --bg-sink:#f2f4f7;
+  --panel:#ffffff;
+  --ink:#101319;
+  --ink-2:rgba(16,19,25,.78);
+  --ink-3:rgba(16,19,25,.52);
+  --line:rgba(16,19,25,.09);
+  --line-2:rgba(16,19,25,.055);
+  --accent:#2557d6;
+  --accent-ink:#1c40a3;
+  --accent-soft:rgba(37,87,214,.075);
+  --teal:#0e7490;
+  --teal-soft:rgba(14,116,144,.07);
+  --warn:#b45309;
+  --warn-soft:rgba(180,83,9,.07);
+  --danger:#b42318;
+  --danger-soft:rgba(180,35,24,.06);
+  --code-bg:#11141a;
+  --code-line:rgba(255,255,255,.09);
+  --sbw:290px;
+  --radius:10px;
+  --font-display:"Outfit","Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --font-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--font-body);font-size:15px;line-height:1.72;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;height:auto}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,kbd,pre{font-family:var(--font-mono)}
+::selection{background:rgba(37,87,214,.16)}
+
+/* ---------- progress ---------- */
+.progress{position:fixed;top:0;left:0;right:0;height:2px;background:transparent;z-index:60}
+.progress>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--teal));transition:width .08s linear}
+
+/* ---------- sidebar ---------- */
+.sb{
+  position:fixed;top:0;left:0;bottom:0;width:var(--sbw);
+  background:var(--bg-soft);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;z-index:40;
+}
+.sb-head{padding:24px 20px 16px;border-bottom:1px solid var(--line-2)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{
+  width:34px;height:34px;flex:0 0 34px;border-radius:9px;
+  background:linear-gradient(145deg,var(--accent),#12379b);color:#fff;
+  font-family:var(--font-mono);font-size:12px;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(18,55,155,.28),inset 0 1px 0 rgba(255,255,255,.28);
+}
+.brand-txt strong{display:block;font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:-.01em}
+.brand-txt span{display:block;font-size:11px;color:var(--ink-3);letter-spacing:.04em;font-family:var(--font-mono)}
+.sb-search{position:relative;margin:16px 20px 8px}
+.sb-search input{
+  width:100%;height:36px;padding:0 34px 0 12px;border-radius:8px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+  font-family:var(--font-body);font-size:13px;outline:none;
+  transition:border-color .18s,box-shadow .18s;
+}
+.sb-search input::placeholder{color:var(--ink-3)}
+.sb-search input:focus{border-color:rgba(37,87,214,.45);box-shadow:0 0 0 3px var(--accent-soft)}
+.sb-search kbd{
+  position:absolute;right:8px;top:9px;font-size:11px;color:var(--ink-3);
+  border:1px solid var(--line);border-radius:4px;padding:1px 5px;background:var(--bg-soft);
+}
+.sb-nav{flex:1;overflow-y:auto;padding:8px 12px 28px;scrollbar-width:thin}
+.nav-group{
+  margin:16px 8px 6px;font-size:11px;font-weight:600;color:var(--ink-3);
+  letter-spacing:.14em;text-transform:uppercase;font-family:var(--font-display);
+}
+.nav-link{
+  display:flex;align-items:center;gap:8px;min-height:34px;padding:6px 10px;border-radius:7px;
+  color:var(--ink-2);font-size:13.5px;line-height:1.35;text-decoration:none;
+  border-left:2px solid transparent;transition:background .16s,color .16s,border-color .16s;
+}
+.nav-link:hover{background:rgba(16,19,25,.045);color:var(--ink);text-decoration:none}
+.nav-link:active{background:rgba(16,19,25,.075)}
+.nav-link.is-active{background:#fff;color:var(--accent-ink);border-left-color:var(--accent);font-weight:600;box-shadow:0 1px 2px rgba(16,19,25,.05)}
+.nav-link .dot{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.35;flex:0 0 4px}
+.nav-link.is-active .dot{opacity:1;background:var(--accent)}
+.sb-foot{padding:14px 20px 18px;border-top:1px solid var(--line-2);font-size:11.5px;color:var(--ink-3);line-height:1.6}
+.sb-foot b{color:var(--ink-2);font-weight:600}
+
+/* ---------- main ---------- */
+main{margin-left:var(--sbw);min-width:0}
+.topbar{
+  position:sticky;top:0;z-index:30;height:56px;display:flex;align-items:center;gap:12px;
+  padding:0 clamp(16px,4vw,48px);border-bottom:1px solid var(--line-2);
+  background:rgba(255,255,255,.86);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.crumb{font-size:12.5px;color:var(--ink-3);display:flex;align-items:center;gap:8px;min-width:0}
+.crumb b{color:var(--ink-2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb .sep{opacity:.45}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:999px;
+  font-size:11.5px;font-family:var(--font-mono);color:var(--accent-ink);
+  background:var(--accent-soft);border:1px solid rgba(37,87,214,.16);
+}
+.chip.plain{color:var(--ink-3);background:var(--bg-soft);border-color:var(--line)}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.menu-btn{display:none}
+.wrap{max-width:900px;margin:0 auto;padding:0 clamp(16px,4vw,48px) 96px}
+
+/* ---------- hero ---------- */
+.hero{
+  padding:64px 0 40px;position:relative;
+  background:
+    radial-gradient(680px 320px at 8% -10%,rgba(37,87,214,.10),transparent 70%),
+    radial-gradient(520px 260px at 92% 0%,rgba(14,116,144,.07),transparent 72%);
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);
+  font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);
+  margin-bottom:18px;
+}
+.eyebrow::before{content:"";width:22px;height:1px;background:var(--accent);opacity:.5}
+h1{
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(34px,4.6vw,54px);line-height:1.08;letter-spacing:-.035em;
+  margin:0 0 18px;color:var(--ink);
+}
+h1 em{font-style:normal;color:var(--accent)}
+.hero-sub{font-size:16px;line-height:1.75;color:var(--ink-2);max-width:46em;margin:0 0 22px}
+.hero-sub code{background:var(--bg-sink);border:1px solid var(--line-2);border-radius:5px;padding:1px 6px;font-size:13px;color:var(--ink)}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:32px;align-items:start}
+.code-card{
+  background:var(--code-bg);border-radius:12px;border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 18px 40px -18px rgba(16,19,25,.45),0 2px 6px rgba(16,19,25,.12);
+  overflow:hidden;
+}
+.code-bar{
+  display:flex;align-items:center;gap:8px;padding:10px 12px;
+  border-bottom:1px solid var(--code-line);font-family:var(--font-mono);font-size:11.5px;color:rgba(255,255,255,.55)
+}
+.code-bar .lights{display:flex;gap:5px;margin-right:2px}
+.code-bar .lights i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.22);display:block}
+.code-bar .file{margin-left:2px}
+.copy{
+  margin-left:auto;height:26px;padding:0 9px;border-radius:6px;cursor:pointer;
+  border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:rgba(255,255,255,.72);
+  font-family:var(--font-mono);font-size:11px;transition:background .16s,color .16s;
+}
+.copy:hover{background:rgba(255,255,255,.14);color:#fff}
+.copy:active{transform:scale(.97)}
+.copy.done{color:#7ee2b8;border-color:rgba(126,226,184,.4)}
+.code-card pre{margin:0;padding:16px 16px 18px;overflow-x:auto;font-size:12.8px;line-height:1.85;color:#e7ecf5}
+.code-card .cap{padding:10px 14px;border-top:1px solid var(--code-line);font-size:11.5px;color:rgba(255,255,255,.5);font-family:var(--font-body)}
+.sql-k{color:#8fb6ff}
+.sql-s{color:#f3c17a}
+.sql-c{color:rgba(255,255,255,.34)}
+
+/* ---------- stats ---------- */
+.stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  margin:8px 0 8px;
+}
+.stat{background:var(--bg);padding:18px 18px 16px}
+.stat b{
+  display:block;font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:-.02em;
+  color:var(--ink);font-variant-numeric:tabular-nums;
+}
+.stat b span{font-size:13px;font-weight:600;color:var(--ink-3);margin-left:3px;letter-spacing:0}
+.stat small{display:block;margin-top:4px;font-size:12px;color:var(--ink-3);letter-spacing:.02em}
+
+/* ---------- sections ---------- */
+section{scroll-margin-top:76px;padding-top:56px}
+section>h2{
+  font-family:var(--font-display);font-weight:700;font-size:clamp(24px,2.6vw,31px);
+  line-height:1.22;letter-spacing:-.025em;margin:0 0 10px;color:var(--ink);
+  display:flex;align-items:baseline;gap:12px;
+}
+section>h2 .num{
+  font-family:var(--font-mono);font-size:12px;font-weight:400;color:var(--accent);
+  letter-spacing:.06em;flex:0 0 auto;padding-top:2px;
+}
+.lead{font-size:14.5px;color:var(--ink-3);margin:0 0 22px;max-width:52em}
+h3{
+  font-family:var(--font-display);font-weight:600;font-size:17px;letter-spacing:-.01em;
+  margin:34px 0 10px;color:var(--ink);display:flex;align-items:center;gap:9px;
+}
+h3 .tag{
+  font-family:var(--font-mono);font-size:11px;font-weight:400;color:var(--ink-3);
+  border:1px solid var(--line);border-radius:5px;padding:1px 6px;letter-spacing:.02em;
+}
+p{margin:0 0 14px;color:rgba(16,19,25,.86)}
+p code,li code,td code,th code{
+  font-size:12.6px;background:var(--bg-sink);border:1px solid var(--line-2);
+  border-radius:5px;padding:1px 5px;color:#213048;white-space:nowrap;
+}
+ul,ol{margin:0 0 16px;padding-left:20px;color:rgba(16,19,25,.86)}
+li{margin:0 0 7px}
+li::marker{color:var(--ink-3)}
+
+/* ---------- tables ---------- */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:0 0 20px;background:var(--bg)}
+table{border-collapse:collapse;width:100%;font-size:13.4px}
+th,td{padding:11px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line-2)}
+thead th{
+  background:var(--bg-soft);font-weight:600;color:var(--ink-2);font-size:12.4px;
+  letter-spacing:.03em;white-space:nowrap;border-bottom:1px solid var(--line);
+}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(37,87,214,.028)}
+td:first-child{color:var(--ink);font-weight:500}
+table.dict td:first-child{font-family:var(--font-mono);font-size:12.6px;font-weight:400;white-space:nowrap;color:#22314d}
+table.dict td:nth-child(2){color:var(--ink-2)}
+td .sm{display:block;font-size:11.8px;color:var(--ink-3);margin-top:3px}
+
+/* ---------- code blocks ---------- */
+.code{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 18px;background:var(--code-bg)}
+.code .code-bar{background:rgba(255,255,255,.03)}
+.code pre{margin:0;padding:15px 16px 17px;overflow-x:auto;font-size:12.6px;line-height:1.8;color:#e7ecf5}
+.code pre code{background:none;border:none;padding:0;color:inherit;white-space:pre}
+
+/* ---------- callouts ---------- */
+.note{
+  display:grid;grid-template-columns:3px 1fr;gap:14px;padding:14px 16px 14px 0;
+  border-radius:10px;margin:0 0 20px;background:var(--bg-soft);border:1px solid var(--line-2);
+  font-size:13.8px;color:var(--ink-2);
+}
+.note::before{content:"";border-radius:2px;background:var(--ink-3);margin-left:-1px}
+.note strong{color:var(--ink);font-weight:600}
+.note p{margin:0 0 8px}
+.note p:last-child{margin:0}
+.note.tip{background:var(--teal-soft);border-color:rgba(14,116,144,.16)}
+.note.tip::before{background:var(--teal)}
+.note.warn{background:var(--warn-soft);border-color:rgba(180,83,9,.18)}
+.note.warn::before{background:var(--warn)}
+.note.danger{background:var(--danger-soft);border-color:rgba(180,35,24,.16)}
+.note.danger::before{background:var(--danger)}
+.note .body{padding-right:0}
+
+/* ---------- traps ---------- */
+.traps{list-style:none;padding:0;margin:0 0 8px;counter-reset:trap}
+.traps li{
+  counter-increment:trap;position:relative;padding:14px 16px 14px 52px;margin:0 0 10px;
+  border:1px solid var(--line);border-radius:10px;background:var(--bg);
+  font-size:13.8px;color:var(--ink-2);
+  transition:border-color .18s,box-shadow .18s;
+}
+.traps li:hover{border-color:rgba(180,35,24,.28);box-shadow:0 2px 10px rgba(16,19,25,.05)}
+.traps li::before{
+  content:counter(trap,decimal-leading-zero);position:absolute;left:14px;top:14px;
+  font-family:var(--font-mono);font-size:12px;color:var(--danger);opacity:.85;
+}
+.traps li b{color:var(--ink);font-weight:600}
+.traps li.is-new{
+  background:linear-gradient(180deg,rgba(180,35,24,.035),transparent 60%);
+  border-color:rgba(180,35,24,.2);
+}
+.traps li .badge{
+  margin-left:6px;font-family:var(--font-mono);font-size:10.5px;color:var(--danger);
+  border:1px solid rgba(180,35,24,.25);border-radius:4px;padding:0 4px;vertical-align:1px;
+}
+
+/* ---------- path ---------- */
+.day{font-family:var(--font-mono);font-size:12px;color:var(--accent-ink);white-space:nowrap}
+table.path td{border-bottom:1px solid var(--line-2)}
+
+/* ---------- footer ---------- */
+footer{
+  margin-left:var(--sbw);border-top:1px solid var(--line);background:var(--bg-soft);
+}
+.foot-in{
+  max-width:900px;margin:0 auto;padding:40px clamp(16px,4vw,48px) 56px;
+  display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:flex-start;
+}
+.foot-in .fb{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:-.01em;margin:0 0 6px}
+.foot-in p{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.7}
+.foot-meta{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3);text-align:right;line-height:1.9}
+
+/* ---------- scrim / mobile ---------- */
+.scrim{display:none;position:fixed;inset:0;background:rgba(16,19,25,.42);z-index:35;opacity:0;transition:opacity .2s}
+.scrim.is-on{display:block;opacity:1}
+.skip{position:absolute;left:-9999px;top:0;background:#fff;padding:10px 14px;border-radius:8px;z-index:99}
+.skip:focus{left:12px;top:12px;border:1px solid var(--accent)}
+:focus-visible{outline:2px solid rgba(37,87,214,.55);outline-offset:2px;border-radius:4px}
+
+@media (max-width:1100px){
+  .hero-grid{grid-template-columns:1fr;gap:24px}
+}
+@media (max-width:900px){
+  .sb{transform:translateX(-100%);transition:transform .22s ease;box-shadow:none;width:min(88vw,var(--sbw))}
+  .sb.is-open{transform:none;box-shadow:0 12px 40px rgba(16,19,25,.2)}
+  main,footer{margin-left:0}
+  .menu-btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:44px;height:44px;margin-left:-10px;border:none;background:none;cursor:pointer;
+    color:var(--ink-2);font-size:18px;border-radius:9px;
+  }
+  .menu-btn:active{background:var(--bg-sink)}
+  .hero{padding:36px 0 28px}
+  section{padding-top:44px}
+  .foot-in{flex-direction:column}
+  .foot-meta{text-align:left}
+  h1{letter-spacing:-.03em}
+}
+@media (max-width:640px){
+  body{font-size:14.5px}
+  .stats{grid-template-columns:1fr 1fr}
+  .stat b{font-size:22px}
+  table{font-size:12.8px}
+  th,td{padding:9px 11px}
+  .hero-sub{font-size:15px}
+  .traps li{padding:12px 14px 12px 46px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important;animation:none!important}
+}
+@media print{
+  .sb,.topbar,.progress,.menu-btn,.scrim{display:none!important}
+  main,footer{margin-left:0}
+  .code-card{box-shadow:none}
+  section{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="progress" aria-hidden="true"><span id="bar"></span></div>
+<div class="scrim" id="scrim"></div>
+
+<aside class="sb" id="sb" aria-label="手册目录">
+  <div class="sb-head">
+    <div class="brand">
+      <div class="brand-mark">P2P</div>
+      <div class="brand-txt">
+        <strong>变量查询手册</strong>
+        <span>p2p_learning · MySQL 8</span>
+      </div>
+    </div>
+  </div>
+  <div class="sb-search">
+    <label class="skip" for="navSearch">筛选章节</label>
+    <input id="navSearch" type="search" placeholder="筛选章节 / 表名 / 字段" autocomplete="off">
+    <kbd>/</kbd>
+  </div>
+  <nav class="sb-nav" id="nav">
+    <p class="nav-group">开始</p>
+    <a class="nav-link is-active" href="#overview"><i class="dot"></i>概览与 v3.1 修订</a>
+    <a class="nav-link" href="#howto"><i class="dot"></i>这本手册怎么用</a>
+    <a class="nav-link" href="#scale"><i class="dot"></i>库的规模与建库</a>
+    <p class="nav-group">核心口径</p>
+    <a class="nav-link" href="#golden"><i class="dot"></i>黄金组合</a>
+    <a class="nav-link" href="#naming"><i class="dot"></i>表命名规则</a>
+    <a class="nav-link" href="#tables"><i class="dot"></i>全库表清单 32 张</a>
+    <a class="nav-link" href="#enum"><i class="dot"></i>核心枚举速查</a>
+    <p class="nav-group">字段字典</p>
+    <a class="nav-link" href="#dict-user"><i class="dot"></i>用户与交易</a>
+    <a class="nav-link" href="#dict-money"><i class="dot"></i>资金与持仓</a>
+    <a class="nav-link" href="#dict-biz"><i class="dot"></i>营销与业务</a>
+    <a class="nav-link" href="#index"><i class="dot"></i>字段反查索引</a>
+    <a class="nav-link" href="#metrics"><i class="dot"></i>指标口径速查</a>
+    <p class="nav-group">实战</p>
+    <a class="nav-link" href="#mapping"><i class="dot"></i>业务问题映射</a>
+    <a class="nav-link" href="#templates"><i class="dot"></i>修正版 SQL 模板</a>
+    <a class="nav-link" href="#traps"><i class="dot"></i>陷阱清单 14 条</a>
+    <a class="nav-link" href="#path"><i class="dot"></i>7 天练习路径</a>
+    <a class="nav-link" href="#errors"><i class="dot"></i>常见报错排查</a>
+    <p class="nav-group">附录</p>
+    <a class="nav-link" href="#appendix-a"><i class="dot"></i>v2 补全说明</a>
+    <a class="nav-link" href="#appendix-b"><i class="dot"></i>版本记录</a>
+  </nav>
+  <div class="sb-foot">
+    <b>数据 100% 合成</b><br>无真实用户信息 · 仅用于练 SQL
+  </div>
+</aside>
+
+<main id="main">
+  <div class="topbar">
+    <button class="menu-btn" id="menuBtn" aria-label="打开目录" aria-expanded="false" aria-controls="sb">☰</button>
+    <div class="crumb">
+      <span>资料库</span><span class="sep">/</span><span>P2P 练习库</span><span class="sep">/</span><b>变量查询手册</b>
+    </div>
+    <div class="right">
+      <span class="chip">v3.1</span>
+      <span class="chip plain">32 张表</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <header class="hero" id="top">
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">Field &amp; Metric Handbook</div>
+          <h1>P2P 数仓<br><em>变量查询手册</em></h1>
+          <p class="hero-sub">
+            一个能真跑起来的 P2P 练习库：从 27 条业务 SQL 反推表结构、造 110 万行合成数据，
+            再用 <code>v2_数据补全.sql</code> 把真实缺失压到 5% 以内。这本手册回答三个问题——
+            <strong>字段在哪、枚举啥意思、口径怎么写</strong>。
+          </p>
+          <div class="tags">
+            <span class="chip">MySQL 8.0</span>
+            <span class="chip plain">快照锚点 2016-01-11</span>
+            <span class="chip plain">2015-01 ~ 2016-08</span>
+            <span class="chip plain">14 条陷阱</span>
+          </div>
+        </div>
+        <div class="code-card">
+          <div class="code-bar"><span class="lights"><i></i><i></i><i></i></span><span class="file">golden_rule.sql</span></div>
+          <pre><code><span class="sql-c">-- 一笔「成功的投资」：三个条件缺一不可</span>
+<span class="sql-k">WHERE</span> biztype <span class="sql-k">IN</span> (<span class="sql-s">1</span>, <span class="sql-s">3</span>)
+  <span class="sql-k">AND</span> inouttype = <span class="sql-s">1</span>
+  <span class="sql-k">AND</span> `status` = <span class="sql-s">20</span></code></pre>
+          <div class="cap">biztype 排除充值提现 · inouttype 排除回款 · status 排除失败单</div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b>32<span>张</span></b><small>全库表数量</small></div>
+        <div class="stat"><b>20,000</b><small>用户（三层同构）</small></div>
+        <div class="stat"><b>110<span>万</span></b><small>合成数据行</small></div>
+        <div class="stat"><b>27<span>条</span></b><small>原仓库分析脚本</small></div>
+      </div>
+    </header>
+
+    <section id="overview">
+      <h2><span class="num">01</span>概览与 v3.1 修订</h2>
+      <p class="lead">配套文件：<code>schema.sql</code> / <code>gen_data.py</code> / <code>data.sql</code> / <code>v2_数据补全.sql</code>，以及 MySQL-master 的 27 条分析脚本。</p>
+      <p>v3 的底子是「原地补全，不重建」：<code>v2_数据补全.sql</code> 用两个幂等存储过程（<code>safe_add_col</code>、<code>insert_if_empty</code>）给老库加列加表，跑第二遍也不会报错。这一版（v3.1）在 v3 基础上做了一次通读校对，改动如下：</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>改动</th><th>内容</th></tr></thead>
+          <tbody>
+            <tr><td>订正数据错误</td><td>v3 原写「年龄均匀 1960~2005」有误。<code>v2_数据补全.sql</code> 第 56 行按 <code>'19' || 70~98</code> 生成，<code>iDdate</code> 实际是 <strong>1970–1998</strong>，快照日对应 <strong>17–46 岁</strong>。</td></tr>
+            <tr><td>SQL 别名规范化</td><td>模板里的别名 <code>sum</code> 改为 <code>trade_amt</code>——和聚合函数同名，读起来容易看漏，部分客户端还会误高亮。逻辑与原脚本等价。</td></tr>
+            <tr><td>统一表数量口径</td><td>v2 之后全库 <strong>32 张表</strong>（含同构副本与快照分片）。README 里的「15 张」是 v1 时期的说法，已过期。</td></tr>
+            <tr><td>新增四节</td><td>§0 使用说明、§4 全库表清单、§8 指标口径速查、§13 常见报错排查。</td></tr>
+            <tr><td>陷阱扩到 14 条</td><td>补「50 岁及以上分桶恒为 0」与「<code>age_group</code> 三个标签是空档」——两个都会让人误以为 SQL 写错。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="howto">
+      <h2><span class="num">02</span>这本手册怎么用</h2>
+      <p class="lead">别从头读。按目的跳转，左栏目录可以直接搜表名或字段名。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>你的目的</th><th>直接跳</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>第一次把库跑起来</td><td>库的规模与建库</td><td>三步建库，1~3 分钟灌完 110 万行</td></tr>
+            <tr><td>写 WHERE 前确认枚举</td><td>核心枚举速查</td><td><code>status</code> 同名不同义，必须先对表</td></tr>
+            <tr><td>找某张表有哪些字段</td><td>字段字典 / 字段反查</td><td>按表查用字典，按字段反查用索引</td></tr>
+            <tr><td>想知道某个指标怎么算</td><td>指标口径速查</td><td>投资额、留存、余额、收益、核销率</td></tr>
+            <tr><td>手边要一段能直接跑的 SQL</td><td>修正版模板</td><td>画像交叉四连 + 黄金组合</td></tr>
+            <tr><td>结果不对 / 报表报错</td><td>陷阱清单 / 报错排查</td><td>先查陷阱，再查报错表</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="scale">
+      <h2><span class="num">03</span>库的规模与建库</h2>
+      <p class="lead">先对数据有个体感，写 SQL 时才知道哪张表能当驱动表。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>指标</th><th>数值</th></tr></thead>
+          <tbody>
+            <tr><td>表数量</td><td>32 张（含同构副本与快照分片）</td></tr>
+            <tr><td>用户</td><td>20,000（<code>account</code> / <code>da_account</code> / <code>ds_account</code> 三层同构）</td></tr>
+            <tr><td>交易流水</td><td>约 25,000（<code>account_trade</code> / <code>da_account_trade</code>）</td></tr>
+            <tr><td>App 打开日志</td><td>270,268（<code>system_appopenlog</code> 149,548 + <code>_bak</code> 120,720）</td></tr>
+            <tr><td>余额快照</td><td>310,000 行（2016-07-01 起）</td></tr>
+            <tr><td>签到流水</td><td>120,000 行（2016-08-02 起）</td></tr>
+            <tr><td>数据总行数</td><td>约 110 万</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>拟真分布：注册量逐月增长、2015-12 大促冲高；30% 用户产生过投资；交易集中在 19–23 点；金额对数正态（中位数约 1800 元）。</p>
+
+      <h3>三步建库 <span class="tag">约 3 分钟</span></h3>
+      <div class="code">
+        <div class="code-bar"><span class="lights"><i></i><i></i><i></i></span><span class="file">terminal</span><button class="copy" type="button">复制</button></div>
+        <pre><code># 1. 建库
+mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS p2p_learning DEFAULT CHARACTER SET utf8mb4"
+# 2. 建表（27 张）
+mysql -uroot -p p2p_learning &lt; schema.sql
+# 3. 灌数据（约 1~3 分钟）
+mysql -uroot -p p2p_learning &lt; data.sql</code></pre>
+      </div>
+      <p>想用 v3 的全部字段与新增表，继续跑补全脚本（幂等，可重复执行）：</p>
+      <div class="code">
+        <div class="code-bar"><span class="lights"><i></i><i></i><i></i></span><span class="file">terminal</span><button class="copy" type="button">复制</button></div>
+        <pre><code>mysql -uroot -p p2p_learning &lt; v2_数据补全.sql     # 全量
+mysql -uroot -p p2p_learning &lt; v2_补全_增量版.sql  # 或：1~3 节已跑过时的增量版</code></pre>
+      </div>
+    </section>
+
+    <section id="golden">
+      <h2><span class="num">04</span>黄金组合</h2>
+      <p class="lead">全库最高频的一条 WHERE。只记一条，就记这条。</p>
+      <div class="code">
+        <div class="code-bar"><span class="lights"><i></i><i></i><i></i></span><span class="file">golden_rule.sql</span><button class="copy" type="button">复制</button></div>
+        <pre><code>WHERE biztype IN (1, 3) AND inouttype = 1 AND `status` = 20</code></pre>
+      </div>
+      <p>三个条件缺一不可：</p>
+      <ul>
+        <li>漏 <code>biztype</code> → 充值 / 提现（<code>biztype = 4</code>）被当成投资；</li>
+        <li>漏 <code>inouttype = 1</code> → 回款、提现混进投资额；</li>
+        <li>漏 <code>status = 20</code> → 失败单计入成交。</li>
+      </ul>
+      <div class="note tip"><div class="body"><p><strong>算钱时还有一条</strong>：交易总额是四列相加 <code>amount + assetamount + bonusamount + couponamount</code>，只取 <code>amount</code> 会漏掉点点宝余额与抵扣部分。</p></div></div>
+    </section>
+
+    <section id="naming">
+      <h2><span class="num">05</span>表命名规则</h2>
+      <p class="lead">前缀决定这张表是「原始记录」还是「加工结果」，读脚本时靠它判断该不该去重。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>前缀</th><th>含义</th><th>类比数仓分层</th></tr></thead>
+          <tbody>
+            <tr><td>（无前缀）<code>account</code> / <code>account_trade</code></td><td>业务原始表，全量记录</td><td>ODS</td></tr>
+            <tr><td><code>da_</code></td><td>日增量表，每天追加当天新记录（结构同原始表）</td><td>DWD / DWS</td></tr>
+            <tr><td><code>ds_</code></td><td>日快照表，每天全量覆盖当日状态</td><td>ADS</td></tr>
+            <tr><td><code>da_ds_</code></td><td>加工宽表（后缀=快照日期：<code>da_ds_account_0111</code> → 2016-01-11；<code>_1109</code> 同理）</td><td>ADS</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tables">
+      <h2><span class="num">06</span>全库表清单（32 张）</h2>
+      <p class="lead">v2 之后的全貌。行数为合成数据的量级，用于判断是否该当驱动表。</p>
+      <div class="table-wrap">
+        <table class="dict">
+          <thead><tr><th>表名</th><th>层</th><th>行数</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td>account</td><td>ODS</td><td>20,000</td><td>用户主表：注册时间、渠道、来源、性别、生日</td></tr>
+            <tr><td>da_account</td><td>DWD</td><td>20,000</td><td>用户日增量（结构同 account）</td></tr>
+            <tr><td>ds_account</td><td>ADS</td><td>20,000</td><td>用户日快照（结构同 account）</td></tr>
+            <tr><td>account_trade</td><td>ODS</td><td>约 25,000</td><td>交易流水，<strong>全库最核心</strong>（409 次引用）</td></tr>
+            <tr><td>da_account_trade</td><td>DWD</td><td>约 25,000</td><td>交易日增量，脚本多读这张</td></tr>
+            <tr><td>system_appopenlog</td><td>ODS</td><td>149,548</td><td>App 打开日志（2016-01-01 之后）</td></tr>
+            <tr><td>system_appopenlog_bak</td><td>ODS</td><td>120,720</td><td>打开日志分片（2016-01-01 之前）</td></tr>
+            <tr><td>score_gain_stream</td><td>ODS</td><td>120,000</td><td>签到流水（2016-08-02 起）</td></tr>
+            <tr><td>account_inout</td><td>ODS</td><td>约 15,000</td><td>优选理财回款（本息拆分）</td></tr>
+            <tr><td>account_independent_authentication</td><td>ODS</td><td>数千</td><td>绑卡记录（漏斗中间层）</td></tr>
+            <tr><td>ds_save_accountbal</td><td>ADS</td><td>310,000</td><td>账户余额每日快照</td></tr>
+            <tr><td>selfitem</td><td>DIM</td><td>200</td><td>理财标的（年化、期数）</td></tr>
+            <tr><td>da_selfitem</td><td>DIM</td><td>200</td><td>标的维度副本</td></tr>
+            <tr><td>account_ddb_income</td><td>ODS</td><td>约 36,000</td><td>点点宝月度收益</td></tr>
+            <tr><td>account_selfitem_income</td><td>ODS</td><td>约 80,000</td><td>优选理财持仓收益（v2 灌数）</td></tr>
+            <tr><td>account_selfitem</td><td>ODS</td><td>数万</td><td>用户-标的关系</td></tr>
+            <tr><td>da_account_selfitem</td><td>DWD</td><td>数万</td><td>关系副本</td></tr>
+            <tr><td>account_coupons</td><td>ODS</td><td>数万</td><td>券主表（全状态）</td></tr>
+            <tr><td>account_coupons_used</td><td>ODS</td><td>数千</td><td>券分片：已使用</td></tr>
+            <tr><td>account_coupons_expire</td><td>ODS</td><td>数千</td><td>券分片：已过期（v2 补建）</td></tr>
+            <tr><td>account_coupons_overdue</td><td>ODS</td><td>数千</td><td>券分片：作废</td></tr>
+            <tr><td>account_bonus</td><td>ODS</td><td>数万</td><td>红包发放 / 使用</td></tr>
+            <tr><td>account_mobile</td><td>ODS</td><td>20,000</td><td>手机号</td></tr>
+            <tr><td>account_partner_trade</td><td>ODS</td><td>数千</td><td>合伙人（分销）交易</td></tr>
+            <tr><td>activity_group</td><td>ODS</td><td>数千</td><td>拼团主表</td></tr>
+            <tr><td>activity_group_detail</td><td>ODS</td><td>数万</td><td>拼团明细</td></tr>
+            <tr><td>youyu_account</td><td>ODS</td><td>数千</td><td>余鱼子用户（独立 id 体系）</td></tr>
+            <tr><td>youyu_account_trade</td><td>ODS</td><td>数千</td><td>余鱼子交易</td></tr>
+            <tr><td>da_ds_account_0111</td><td>ADS</td><td>20,000</td><td>用户画像快照宽表（<strong>看板主力维度表</strong>）</td></tr>
+            <tr><td>da_ds_account_variable</td><td>ADS</td><td>20,000</td><td>用户变量宽表（手机号 / 省份 / 城市）</td></tr>
+            <tr><td>da_ds_account_variable_0111</td><td>ADS</td><td>20,000</td><td>同上，0111 快照</td></tr>
+            <tr><td>da_ds_account_variable_1109</td><td>ADS</td><td>20,000</td><td>同上，1109 快照</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note"><div class="body"><p>三张 <code>da_ds_account_variable*</code> 内容相同——原库是不同日期的快照。练习时取任意一张即可，不要 UNION。</p></div></div>
+    </section>
+
+    <section id="enum">
+      <h2><span class="num">07</span>核心枚举速查</h2>
+      <p class="lead">同名不同义是这套库最大的坑：<code>status</code> 在五张表里有五套含义。</p>
+
+      <h3>account_trade（交易表） <span class="tag">最常查</span></h3>
+      <div class="table-wrap">
+        <table class="dict">
+          <thead><tr><th>字段</th><th>值</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td>biztype</td><td>1</td><td>优选理财（定期标的投资）</td></tr>
+            <tr><td></td><td>3</td><td>点点宝（活期）</td></tr>
+            <tr><td></td><td>4</td><td>充值 / 提现（资金操作，非投资）</td></tr>
+            <tr><td></td><td>in (1,3)</td><td><strong>「真投资」</strong>——最高频组合</td></tr>
+            <tr><td>inouttype</td><td>1</td><td>流入（充值、买入）</td></tr>
+            <tr><td></td><td>2</td><td>流出（提现、回款）</td></tr>
+            <tr><td>status</td><td>20</td><td>成功</td></tr>
+            <tr><td></td><td>5 / 6</td><td>提现中间态</td></tr>
+            <tr><td></td><td>in (5,6,20)</td><td>提现「已完成」口径</td></tr>
+            <tr><td></td><td>30</td><td>月报脚本出现过，视作成功的一档（原库枚举不止 20）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>其他表的枚举字段</h3>
+      <div class="table-wrap">
+        <table class="dict">
+          <thead><tr><th>表.字段</th><th>值</th><th>含义</th></tr></thead>
+          <tbody>
+            <tr><td>score_gain_stream.status</td><td>1</td><td>签到成功</td></tr>
+            <tr><td>account_independent_authentication.status</td><td>20</td><td>绑卡成功</td></tr>
+            <tr><td>account_coupons*.status</td><td>0 / 1 / 2</td><td>未用 / 已用 / 过期</td></tr>
+            <tr><td>account_bonus.inouttype</td><td>1 / 2</td><td>红包发放 / 红包使用（v2 新增）</td></tr>
+            <tr><td>account_bonus.bonustype</td><td>1 / 2 / 3 / 4</td><td>注册 / 邀请 / 活动 / 节日（v2 新增）</td></tr>
+            <tr><td>account.reg_source</td><td>渠道注册 / 邀请注册</td><td><strong>v2 起渠道与邀请的权威判别口径</strong></td></tr>
+            <tr><td>account.commandid</td><td>非 NULL</td><td>邀请人 id（仅邀请注册用户有值；渠道注册用户 NULL = 业务不适用，<strong>v2 起别再用 <code>commandid IS NULL</code> 判别来源</strong>）</td></tr>
+            <tr><td>account.gender</td><td>1 / 2</td><td>男 / 女（v2 新增，全量填充）</td></tr>
+            <tr><td>activity_group.status</td><td>3 / 4</td><td>拼团中 / 已成团</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="dict-user">
+      <h2><span class="num">08</span>字段字典 · 用户与交易</h2>
+      <p class="lead">三张最常用的表。写任何脚本前，先确认这里的字段语义。</p>
+
+      <h3>account / da_account / ds_account <span class="tag">用户表</span></h3>
+      <div class="table-wrap">
+        <table class="dict">
+          <thead><tr><th>字段</th><th>含义</th><th>备注</th></tr></thead>
+          <tbody>
+            <tr><td>id</td><td>用户 id，全库外键锚点</td><td></td></tr>
+            <tr><td>registtime</td><td>注册时间</td><td><code>hour(registtime)</code> 注册时段、<code>date(registtime)</code> 日报粒度</td></tr>
+            <tr><td>channel</td><td>注册渠道（baidu、tengxun、weixin 等 30+）</td><td>注册时记死</td></tr>
+            <tr><td>reg_source</td><td>渠道注册 / 邀请注册</td><td><strong>v2 新增</strong>，来源分析用它</td></tr>
+            <tr><td>commandid</td><td>邀请人 id</td><td>仅邀请注册用户有值</td></tr>
+            <tr><td>realname</td><td>模拟姓名</td><td><strong>v2 新增</strong>，看板展示用</td></tr>
+            <tr><td>gender</td><td>1=男 2=女</td><td><strong>v2 新增</strong>，全量</td></tr>
+            <tr><td>weixinopenid</td><td>微信 openid（28 位，o 开头）</td><td>v2 起全量</td></tr>
+            <tr><td>iDdate</td><td>出生日期 'YYYY-MM-DD'（1970–1998）</td><td><strong>年龄 / 星座 / 生日的唯一原始来源</strong>，v2 起全量；年龄必须现场计算（快照日 2016-01-11）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>account_trade / da_account_trade <span class="tag">交易表</span></h3>
+      <div class="table-wrap">
+        <table class="dict">
+          <thead><tr><th>字段</th><th>含义</th><th>注意</th></tr></thead>
+          <tbody>
+            <tr><td>tradeid / accountid</td><td>流水号 / 用户 id</td><td></td></tr>
+            <tr><td>itemid</td><td>投资标的 id，指向 <code>selfitem.id</code></td><td><strong>biztype=4 时 NULL = 业务不适用</strong>；JOIN <code>selfitem</code> 前必须限定 <code>biztype IN (1,3)</code></td></tr>
+            <tr><td>biztype / inouttype / status</td><td>见核心枚举</td><td></td></tr>
+            <tr><td>amount / assetamount</td><td>现金部分 / 点点宝余额部分</td><td>交易总额 = <code>amount+assetamount+bonusamount+couponamount</code></td></tr>
+            <tr><td>bonusamount / couponamount</td><td>红包抵扣 / 券抵扣</td><td>营销成本分析用</td></tr>
+            <tr><td>channel</td><td>交易时渠道</td><td>与 <code>account.channel</code>（注册渠道）<strong>不同源</strong></td></tr>
+            <tr><td>createtime</td><td>交易时间</td><td><code>date()</code> 日报粒度、<code>hour()</code> 时段</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>system_appopenlog（+ _bak） <span class="tag">App 打开日志</span></h3>
+      <p><code>accountid</code> + <code>opentime</code>。留存脚本用 7 个 LEFT JOIN 挂 +1/+7/+15/+30/+60/+90 天打开日志（<code>_bak</code> 分表存不同日期段）。<strong>全库最值得精读、再用窗口函数重写的脚本。</strong></p>
+    </section>
+
+    <section id="dict-money">
+      <h2><span class="num">09</span>字段字典 · 资金与持仓</h2>
+      <p class="lead">这一组决定「钱怎么算」。回款、余额、收益分别落在不同的表。</p>
+
+      <h3>account_inout <span class="tag">回款流水</span></h3>
+      <p><code>biztype</code>(1=优选回款) / <code>inouttype</code>(2=流出) / <code>amount</code>(回款总额) / <code>profit</code>(收益部分，<strong>本金 = amount − profit</strong>；v2 起无 NULL) / <code>createtime</code>。</p>
+
+      <h3>ds_save_accountbal <span class="tag">余额快照</span></h3>
+      <p><code>saveday</code>(DATE) + <code>asset</code>(截至当日凌晨的余额)。「账户余额」脚本做的是存量 + 流量组合分析。</p>
+
+      <h3>selfitem / da_selfitem <span class="tag">标的维度</span></h3>
+      <p><code>id</code> / <code>itemtitle</code> / <code>totalperiods</code> / <code>annualrate</code>(年化 %，5.5~12.8)。「新老用户交易区分」按 <code>annualrate</code> 判新手标。</p>
+
+      <h3>account_selfitem / da_account_selfitem <span class="tag">持仓关系</span></h3>
+      <p><code>accountid</code> + <code>itemid</code>，用户与标的的多对多关系。</p>
+
+      <h3>account_ddb_income <span class="tag">点点宝收益</span></h3>
+      <p><code>accountid</code> / <code>amount</code>(<strong>持有本金</strong>) / <code>income</code>(当期收益) / <code>incomedate</code>(DATE 收益归属日)。2015 年终汇总用它算平台累计收益。</p>
+
+      <h3>account_selfitem_income <span class="tag">优选理财收益</span></h3>
+      <p><code>accountid</code> / <code>itemid</code> / <code>income</code> / <code>incomedate</code>。由持仓 × 标的年化推导（8% 持仓 × 20 个月）。供「2015 年终数据报告」「产品数据需求」的 <code>sum(income)</code> 使用；<strong>平台总收益 = ddb_income + 本表</strong>。</p>
+
+      <h3>score_gain_stream <span class="tag">签到流水</span></h3>
+      <p><code>accountid</code> / <code>status</code>(1=成功) / <code>createtime</code>。「每日登录与签到」脚本同时对比 appopenlog 口径——「活跃指标必须声明口径」的现成教材。</p>
+    </section>
+
+    <section id="dict-biz">
+      <h2><span class="num">10</span>字段字典 · 营销与业务</h2>
+      <p class="lead">券、红包、拼团、合伙人，以及两块 v2 新建的画像宽表。</p>
+
+      <h3>account_coupons 家族 + account_bonus <span class="tag">券与红包</span></h3>
+      <div class="table-wrap">
+        <table class="dict">
+          <thead><tr><th>表</th><th>关键字段</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>account_coupons</td><td>amount / money / status / createtime / endtime</td><td>主表。money 为 v2 新增（脚本 7.x 用），endtime = 发放日 + 30 天</td></tr>
+            <tr><td>account_coupons_used</td><td>同上，status=1</td><td>已使用分片</td></tr>
+            <tr><td>account_coupons_expire</td><td>同上，status=2</td><td>已过期（v1 漏建、v2 补建；空表时自动从主表模拟 20%）</td></tr>
+            <tr><td>account_coupons_overdue</td><td>同上，status=2</td><td>作废（模拟 10%）</td></tr>
+            <tr><td>account_bonus</td><td>bonus / bonustype / inouttype / createtime</td><td>三列均 v2 新增；使用占比 30%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>account_partner_trade <span class="tag">合伙人</span></h3>
+      <p><code>partnerid</code>(=account.id) / <code>accountid</code>(下单用户) / <code>amount</code> / <code>tradetime</code>。「合伙人」脚本关联 17 张表，适合学完单表后挑战。</p>
+
+      <h3>activity_group / activity_group_detail <span class="tag">拼团</span></h3>
+      <p>主表 <code>id</code>(=groupid) / <code>status</code>(3 拼团中 / 4 已成团) / <code>amount</code>；明细 <code>groupid</code> / <code>accountid</code> / <code>amount</code>。</p>
+
+      <h3>account_independent_authentication <span class="tag">绑卡记录</span></h3>
+      <p><code>status</code>(20=成功) / <code>createtime</code>。转化漏斗「注册 → 绑卡 → 交易」的中间层。</p>
+
+      <h3>account_mobile <span class="tag">手机号</span></h3>
+      <p><code>accountid</code> + <code>mobile</code>（全量 2 万，13 开头 11 位）。</p>
+
+      <h3>da_ds_account_variable（+ _0111 / _1109） <span class="tag">变量宽表</span></h3>
+      <p><code>accountid</code> / <code>mobile</code> / <code>mobilelocation</code>(省份) / <code>gender</code> / <code>iDdate</code> / <code>city</code>。修复「拼团」的 mobile 需求与「地区交叉交易额」的 mobilelocation 需求。三张表内容相同（原库是不同日期的快照）。</p>
+
+      <h3>da_ds_account_0111 <span class="tag">画像宽表 · 看板主力</span></h3>
+      <div class="table-wrap">
+        <table class="dict">
+          <thead><tr><th>字段</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>id / iDdate / gender</td><td>兼容原脚本引用（id / iDdate / gender）</td></tr>
+            <tr><td>age / age_group</td><td>快照日 2016-01-11 的年龄及 60前~00后 分组（<strong>固化值</strong>；换时点须现算）</td></tr>
+            <tr><td>xingzuo</td><td>12 星座（摩羯座已按正确两段式写入）</td></tr>
+            <tr><td>city / mobilelocation</td><td>城市 / 省份（随机 10 城 / 15 省）</td></tr>
+            <tr><td>channel / registtime</td><td>从 account 搬</td></tr>
+            <tr><td>is_realname / is_investor</td><td>实名标记 / <strong>是否有过成功投资（从交易表回写，唯一真实信号）</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note warn"><div class="body">
+        <p><strong>数据范围（v3.1 订正）</strong>：<code>iDdate</code> 由 <code>v2_数据补全.sql</code> 的 <code>'19' || 70~98</code> 生成，即 <strong>1970–1998 年</strong>，快照日对应 <strong>17–46 岁</strong>。</p>
+        <p>因此 <code>age_group</code> 里的「60前 / 60后 / 00后」三个标签虽然写在 CASE 里，实际<strong>无数据</strong>；<code>age</code> 也不会超过 46。</p>
+      </div></div>
+      <div class="note"><div class="body"><p><strong>模拟数据说明</strong>：性别随机 55/45、城市省份均匀分布——<strong>性别 / 星座交叉类结果没有业务含义</strong>，用于练 SQL 写法与看板搭建；<code>is_investor</code>、<code>channel</code>、<code>registtime</code> 以及交易相关字段是真实信号。</p></div></div>
+
+      <h3>youyu_account / youyu_account_trade <span class="tag">余鱼子</span></h3>
+      <p>最简结构，独立 id 体系，<strong>不能与主站 <code>account.id</code> 直接 JOIN</strong>，只能各自聚合后合并。</p>
+    </section>
+
+    <section id="index">
+      <h2><span class="num">11</span>字段反查索引</h2>
+      <p class="lead">手上只有字段名、不知道在哪张表？从这里倒着找。</p>
+      <div class="table-wrap">
+        <table class="dict">
+          <thead><tr><th>字段</th><th>在哪</th><th>用途关键词</th></tr></thead>
+          <tbody>
+            <tr><td>accountid</td><td>几乎所有表</td><td>万能外键</td></tr>
+            <tr><td>amount</td><td>account_trade / account_inout / account_coupons*（amount+money） / account_bonus（amount+bonus） / account_ddb_income（本金） / activity_group* / account_partner_trade / youyu_account_trade</td><td>算钱（各表含义不同）</td></tr>
+            <tr><td>money</td><td>account_coupons 家族（v2）</td><td>现金券脚本 7.x</td></tr>
+            <tr><td>bonus / bonustype / inouttype</td><td>account_bonus（v2）</td><td>红包发放 / 使用</td></tr>
+            <tr><td>endtime</td><td>account_coupons 家族（v2）</td><td>过期口径</td></tr>
+            <tr><td>biztype / inouttype / status</td><td>account_trade、account_inout、bonus、activity_group、score_gain_stream</td><td><strong>同名不同义，按表查</strong></td></tr>
+            <tr><td>channel</td><td>account（注册渠道）、account_trade（交易渠道）</td><td>两者不同源</td></tr>
+            <tr><td>reg_source / realname / gender</td><td>account 家族（v2）</td><td>来源 / 展示 / 性别</td></tr>
+            <tr><td>iDdate</td><td>account 家族、0111、variable 家族</td><td>年龄 / 星座 / 生日的唯一原始来源</td></tr>
+            <tr><td>age / age_group / xingzuo / city</td><td>da_ds_account_0111（v2）</td><td>看板画像维度</td></tr>
+            <tr><td>mobilelocation / mobile</td><td>da_ds_account_variable 家族（v2）</td><td>地区交叉 / 拼团脚本</td></tr>
+            <tr><td>itemid</td><td>account_trade、account_selfitem、selfitem</td><td>标的关联</td></tr>
+            <tr><td>opentime / incomedate / saveday / endtime / tradetime</td><td>各自表</td><td>时间口径</td></tr>
+            <tr><td>commandid</td><td>account</td><td>v2 起仅邀请用户有值</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="metrics">
+      <h2><span class="num">12</span>指标口径速查</h2>
+      <p class="lead">同一个「投资额」有四种算法，差在口径。抄之前先确认分母。</p>
+      <div class="table-wrap">
+        <table class="dict">
+          <thead><tr><th>指标</th><th>写法</th><th>出处</th></tr></thead>
+          <tbody>
+            <tr><td>投资笔数</td><td><code>count(*)</code> + 黄金组合</td><td>account_trade</td></tr>
+            <tr><td>投资额</td><td><code>sum(amount+assetamount+bonusamount+couponamount)</code> + 黄金组合</td><td>account_trade</td></tr>
+            <tr><td>投资人数</td><td><code>count(distinct accountid)</code> + 黄金组合</td><td>account_trade</td></tr>
+            <tr><td>充值 / 提现额</td><td><code>biztype = 4</code>，按 <code>inouttype</code>（1 充值 / 2 提现）拆方向，<code>status = 20</code></td><td>account_trade</td></tr>
+            <tr><td>首笔投资时间</td><td><code>min(createtime)</code> + 黄金组合，按 accountid 分组</td><td>account_trade</td></tr>
+            <tr><td>决策时长</td><td>首笔 <code>createtime</code> − <code>registtime</code></td><td>account + account_trade</td></tr>
+            <tr><td>次日留存</td><td>注册日 T0，LEFT JOIN <code>opentime = T0+1</code></td><td>account + appopenlog</td></tr>
+            <tr><td>绑卡转化</td><td><code>status = 20</code> 的绑卡数 / 注册数</td><td>account_independent_authentication</td></tr>
+            <tr><td>账户余额（存量）</td><td>当日 <code>ds_save_accountbal.asset</code></td><td>余额快照</td></tr>
+            <tr><td>资金净流入（流量）</td><td>当日 trade 流入 − <code>account_inout</code> 流出</td><td>两张流水</td></tr>
+            <tr><td>回款本金</td><td><code>amount − profit</code></td><td>account_inout</td></tr>
+            <tr><td>平台总收益</td><td><code>ddb_income.income + selfitem_income.income</code></td><td>两张收益表</td></tr>
+            <tr><td>券核销率</td><td><code>status = 1</code> 的券 / 全部券；金额取 <code>money</code></td><td>account_coupons 家族</td></tr>
+            <tr><td>红包使用率</td><td><code>inouttype = 2</code> 笔数 / <code>inouttype = 1</code> 笔数</td><td>account_bonus</td></tr>
+            <tr><td>渠道质量</td><td>注册 → 绑卡 → 投资 三级漏斗，分母用 <code>account.channel</code></td><td>见模板</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="mapping">
+      <h2><span class="num">13</span>业务问题映射</h2>
+      <p class="lead">「要做个什么报表」→「跑哪条脚本 → 重点看哪个变量」。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>问题</th><th>脚本</th><th>关键变量</th></tr></thead>
+          <tbody>
+            <tr><td>每天投资笔数 / 金额</td><td>交易次数</td><td>黄金组合三条件</td></tr>
+            <tr><td>渠道用户质量</td><td>渠道转化率</td><td>account.channel + <strong>reg_source</strong>（v2 起替代 <code>commandid IS NULL</code>）</td></tr>
+            <tr><td>次日 / 7 日留存</td><td>每日用户留存</td><td>registtime + 7 个 LEFT JOIN appopenlog</td></tr>
+            <tr><td>用户决策时长</td><td>平均花费时长</td><td>registtime → 首笔 createtime</td></tr>
+            <tr><td>新老客贡献</td><td>新老用户交易区分</td><td>首笔交易自联结 + annualrate</td></tr>
+            <tr><td>平台资金流</td><td>每日资金流动</td><td>trade 流入 + inout 流出</td></tr>
+            <tr><td>平台欠用户多少</td><td>账户余额</td><td>ds_save_accountbal.asset + 两张流水</td></tr>
+            <tr><td>券 / 红包核销</td><td>周报 / 月报</td><td>money + status + bonus/bonustype/inouttype</td></tr>
+            <tr><td>总收益</td><td>2015 年终</td><td>ddb_income.income + selfitem_income.income</td></tr>
+            <tr><td>画像交叉（年龄 / 性别 / 星座 / 地区）</td><td>用户画像 #4~#8</td><td>见下方修正模板</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="templates">
+      <h2><span class="num">14</span>修正版 SQL 模板</h2>
+      <p class="lead">画像交叉四连，可直接喂看板。相对原脚本只改了别名（<code>sum</code> → <code>trade_amt</code>）与注释，逻辑等价。</p>
+
+      <h3>14.1 年龄交叉交易额 <span class="tag">年龄现算版</span></h3>
+      <div class="code">
+        <div class="code-bar"><span class="lights"><i></i><i></i><i></i></span><span class="file">age_cross.sql</span><button class="copy" type="button">复制</button></div>
+        <pre><code>SELECT 年龄段, count(*) AS 人数, sum(trade_amt) AS 交易额
+FROM (
+  SELECT CASE
+           WHEN age &lt; 20 THEN '20岁以下'
+           WHEN age &lt; 30 THEN '20-29岁'
+           WHEN age &lt; 40 THEN '30-39岁'
+           WHEN age &lt; 50 THEN '40-49岁'
+           ELSE '50岁及以上'
+         END AS 年龄段,
+         trade_amt
+  FROM (
+    SELECT a.id,
+           TIMESTAMPDIFF(YEAR, a.iDdate, '2016-01-11') AS age,  -- 派生指标现场计算
+           b.trade_amt
+    FROM da_ds_account_0111 a
+    JOIN (SELECT accountid,
+                 sum(amount+assetamount+bonusamount+couponamount) AS trade_amt
+          FROM da_account_trade
+          WHERE biztype IN (1,3) AND inouttype = 1 AND `status` = 20
+          GROUP BY 1) b ON a.id = b.accountid
+  ) t
+) aaa
+GROUP BY 1
+ORDER BY FIELD(年龄段, '20岁以下', '20-29岁', '30-39岁', '40-49岁', '50岁及以上');</code></pre>
+      </div>
+      <p>要点：年龄必须锚定快照日；<code>GROUP BY</code> 后用 <code>ORDER BY FIELD</code> 固定分桶顺序。偷懒版：直接 <code>GROUP BY d.age_group</code>（固化列）。</p>
+      <div class="note warn"><div class="body"><p>「50 岁及以上」这一桶恒为 0——<code>iDdate</code> 最早 1970 年，快照日最多 46 岁。看到空桶不是 SQL 写错。</p></div></div>
+
+      <h3>14.2 性别交叉交易额</h3>
+      <div class="code">
+        <div class="code-bar"><span class="lights"><i></i><i></i><i></i></span><span class="file">gender_cross.sql</span><button class="copy" type="button">复制</button></div>
+        <pre><code>SELECT d.gender, count(*) AS 人数, sum(b.trade_amt) AS 交易额
+FROM da_ds_account_0111 d
+JOIN (SELECT accountid,
+             sum(amount+assetamount+bonusamount+couponamount) AS trade_amt
+      FROM da_account_trade
+      WHERE biztype IN (1,3) AND inouttype = 1 AND `status` = 20
+      GROUP BY 1) b ON d.id = b.accountid
+GROUP BY 1;</code></pre>
+      </div>
+
+      <h3>14.3 星座交叉交易额 <span class="tag">摩羯座两段式修正</span></h3>
+      <div class="code">
+        <div class="code-bar"><span class="lights"><i></i><i></i><i></i></span><span class="file">zodiac_cross.sql</span><button class="copy" type="button">复制</button></div>
+        <pre><code>SELECT 星座, count(*) AS 人数, sum(trade_amt) AS 交易额
+FROM (
+  SELECT CASE
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '03-21' AND '04-19' THEN '白羊座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '04-20' AND '05-20' THEN '金牛座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '05-21' AND '06-21' THEN '双子座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '06-22' AND '07-22' THEN '巨蟹座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '07-23' AND '08-22' THEN '狮子座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '08-23' AND '09-22' THEN '处女座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '09-23' AND '10-23' THEN '天秤座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '10-24' AND '11-22' THEN '天蝎座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '11-23' AND '12-21' THEN '射手座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '12-22' AND '12-31' THEN '摩羯座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '01-01' AND '01-19' THEN '摩羯座'
+           WHEN SUBSTRING(a.iDdate,6,5) BETWEEN '01-20' AND '02-18' THEN '水瓶座'
+           ELSE '双鱼座' END AS 星座,
+         b.trade_amt
+  FROM (SELECT id, iDdate FROM da_ds_account_0111) a
+  JOIN (SELECT accountid,
+               sum(amount+assetamount+bonusamount+couponamount) AS trade_amt
+        FROM da_account_trade
+        WHERE biztype IN (1,3) AND inouttype = 1 AND `status` = 20
+        GROUP BY 1) b ON a.id = b.accountid
+) x
+GROUP BY 1
+ORDER BY 3 DESC;</code></pre>
+      </div>
+      <p>偷懒版：<code>GROUP BY d.xingzuo</code>（0111 已固化星座列）。</p>
+
+      <h3>14.4 地区交叉交易额 <span class="tag">修正双 SELECT</span></h3>
+      <div class="code">
+        <div class="code-bar"><span class="lights"><i></i><i></i><i></i></span><span class="file">region_cross.sql</span><button class="copy" type="button">复制</button></div>
+        <pre><code>SELECT d.mobilelocation AS 省份, count(*) AS 人数, sum(b.trade_amt) AS 交易额
+FROM da_ds_account_variable_0111 d
+JOIN (SELECT accountid,
+             sum(amount+assetamount+bonusamount+couponamount) AS trade_amt
+      FROM da_account_trade
+      WHERE biztype IN (1,3) AND inouttype = 1 AND `status` = 20
+      GROUP BY 1) b ON d.accountid = b.accountid
+GROUP BY 1
+ORDER BY 3 DESC
+LIMIT 15;</code></pre>
+      </div>
+    </section>
+
+    <section id="traps">
+      <h2><span class="num">15</span>陷阱清单（14 条）</h2>
+      <p class="lead">结果不对时先扫一遍这里——多数「SQL 写错了」其实是口径选错了。</p>
+      <ol class="traps">
+        <li><b>`status` 同名不同义</b>：交易 20 / 券 0-1-2 / 拼团 3-4 / 签到 1。写 WHERE 前先回枚举表对表。</li>
+        <li><b>两张 channel 不同源</b>：<code>account.channel</code> = 从哪来，<code>account_trade.channel</code> = 在哪成交。</li>
+        <li><b>biztype=4 不是投资</b>：算投资总额必须 <code>biztype IN (1,3)</code>。</li>
+        <li><b>四列相加才是交易总额</b>：<code>amount+assetamount+bonusamount+couponamount</code>，漏 <code>assetamount</code> 会低估。</li>
+        <li><b>v2 起别再用 <code>commandid IS NULL</code> 判渠道</b>：改用 <code>reg_source</code>。</li>
+        <li><b>youyu 的 id 与主站不通</b>：不能直接 JOIN，只能各自聚合后合并。</li>
+        <li><b>回款要拆本息</b>：<code>account_inout</code> 本金 = <code>amount − profit</code>。</li>
+        <li><b>date() vs hour() 粒度</b>：日报用 <code>date(createtime)</code>，时段分布用 <code>hour(createtime)</code>，混用会对不上数。</li>
+        <li><b>业务不适用 NULL ≠ 缺失</b>：<code>commandid</code>（渠道用户）、<code>itemid</code>（充提行）故意为 NULL，不要「修复」。</li>
+        <li><b>原脚本 bug ①</b>：用户画像 #8「地区交叉」开头有两行 SELECT，删掉第一行才能跑。</li>
+        <li><b>原脚本 bug ②</b>：星座 CASE 里摩羯座写 <code>BETWEEN '12-22' AND '01-19'</code>，字符串比较永假（摩羯座永远空组），必须拆成 '12-22'~'12-31' 与 '01-01'~'01-19' 两段。</li>
+        <li><b>年龄是派生指标</b>：库里只有 <code>iDdate</code> 原子字段；快照表里的 <code>age</code> 是按 2016-01-11 固化的，换时点须现算。</li>
+        <li class="is-new"><b>「50 岁及以上」分桶恒为 0</b><span class="badge">v3.1</span>：<code>iDdate</code> 区间 1970–1998，快照日最大 46 岁。空桶不代表数据坏了。</li>
+        <li class="is-new"><b><code>age_group</code> 的三个标签是空档</b><span class="badge">v3.1</span>：CASE 里写了「60前 / 60后 / 00后」，但数据只落在 70后~90后；按 <code>age_group</code> 出图会少三档。</li>
+      </ol>
+    </section>
+
+    <section id="path">
+      <h2><span class="num">16</span>7 天练习路径</h2>
+      <p class="lead">从单表到多表，每天一个可验证的产出。</p>
+      <div class="table-wrap">
+        <table class="path">
+          <thead><tr><th>天</th><th>任务</th><th>对应小节</th></tr></thead>
+          <tbody>
+            <tr><td><span class="day">DAY 01</span></td><td>跑通交易次数、每日完成情况；默写黄金组合</td><td>黄金组合 / 枚举速查</td></tr>
+            <tr><td><span class="day">DAY 02</span></td><td>渠道转化率 + 日报-渠道明；用 <code>reg_source</code> 替换 commandid 判别</td><td>用户与交易 / 陷阱 05</td></tr>
+            <tr><td><span class="day">DAY 03</span></td><td>每日用户留存；把 7 个 LEFT JOIN 画在纸上</td><td>用户与交易</td></tr>
+            <tr><td><span class="day">DAY 04</span></td><td>窗口函数重写留存，对比结果一致</td><td>用户与交易 / SQL 模板</td></tr>
+            <tr><td><span class="day">DAY 05</span></td><td>每日资金流动 + 账户余额</td><td>资金与持仓</td></tr>
+            <tr><td><span class="day">DAY 06</span></td><td>券核销 + 红包分布（money / bonus 新列）</td><td>营销与业务</td></tr>
+            <tr><td><span class="day">DAY 07</span></td><td>2015 年终汇总通读 + 画像交叉四连</td><td>SQL 模板</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note tip"><div class="body"><p><strong>精读建议</strong>：「每日用户留存」用 7 个 LEFT JOIN 分别挂 0/1/7/15/30/60/90 天的打开日志，写法笨但思路极清楚。看懂后自己用窗口函数重写一遍（<code>DATEDIFF + GROUP BY</code> 两层就够），比对答案有价值得多。</p></div></div>
+    </section>
+
+    <section id="errors">
+      <h2><span class="num">17</span>常见报错排查</h2>
+      <p class="lead">按 MySQL 实际返回的报错原文查。多数是「还没跑补全脚本」或「MySQL 8 的 group by 严格模式」。</p>
+      <div class="table-wrap">
+        <table class="dict">
+          <thead><tr><th>报错</th><th>原因</th><th>处理</th></tr></thead>
+          <tbody>
+            <tr><td>Table 'p2p_learning.da_ds_account_0111' doesn't exist</td><td>还没跑 v2 补全脚本</td><td>跑 <code>v2_数据补全.sql</code>；只想临时跑通可把表名换成 <code>ds_account</code></td></tr>
+            <tr><td>Unknown column 'money' / 'bonus' / 'endtime'</td><td>v1 建的库缺 v2 新列</td><td>跑补全脚本（<code>safe_add_col</code> 幂等，已存在的列会跳过）</td></tr>
+            <tr><td>Expression #1 of SELECT list is not in GROUP BY clause（1055）</td><td>MySQL 8 默认 <code>ONLY_FULL_GROUP_BY</code></td><td>把 SELECT 里的非聚合列写进 GROUP BY，或本次会话 <code>SET SESSION sql_mode=''</code></td></tr>
+            <tr><td>Incorrect datetime value</td><td><code>iDdate</code> 是 VARCHAR，和 DATETIME 混比</td><td>字符串比较用 <code>SUBSTRING(iDdate,6,5)</code>；要转日期用 <code>STR_TO_DATE(iDdate,'%Y-%m-%d')</code></td></tr>
+            <tr><td>Column 'status' in where clause is ambiguous</td><td>多表 JOIN 后同名列未加表别名</td><td><code>a.status</code> / <code>b.status</code> 显式限定</td></tr>
+            <tr><td>ORDER BY FIELD(...) 顺序不生效</td><td>排序用的别名和 SELECT 别名不完全一致（中文、空格）</td><td>别名保持一致</td></tr>
+            <tr><td>CALL safe_add_col 报语法错</td><td>客户端不支持 <code>DELIMITER</code></td><td>用命令行 <code>mysql &lt; v2_数据补全.sql</code>，或在客户端整段执行而不逐句执行</td></tr>
+            <tr><td>查询很慢</td><td>大表 JOIN 无索引 / 7 个 LEFT JOIN</td><td><code>system_appopenlog</code> 已有 <code>idx_open(accountid, opentime)</code>；先用 <code>EXPLAIN</code> 看驱动表</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="appendix-a">
+      <h2><span class="num">18</span>附录 A · v2 补全说明</h2>
+      <p class="lead">补全脚本做了什么、怎么验收、还留着什么坑。</p>
+      <ul>
+        <li><strong>脚本</strong>：<code>v2_数据补全.sql</code>（全量，幂等）/ <code>v2_补全_增量版.sql</code>（第 4 节起，适合 1~3 节已跑过的库）。</li>
+        <li><strong>机制</strong>：两个辅助存储过程 <code>safe_add_col</code>（列存在则跳过）、<code>insert_if_empty</code>（空表才灌数），可重复执行。</li>
+        <li><strong>已补</strong>：account 家族 <code>iDdate</code>/<code>weixinopenid</code> 全量化 + <code>realname</code>/<code>gender</code>/<code>reg_source</code> 新列；<code>account_bonus</code> 补 <code>bonus</code>/<code>bonustype</code>/<code>inouttype</code>；coupons 家族补 <code>money</code>/<code>endtime</code>（含补建漏掉的 expire 表并模拟 20% 过期券）；<code>ddb_income</code> 补 <code>amount</code>；<code>account_inout.profit</code> 补 0。</li>
+        <li><strong>新建 5 张表</strong>：<code>account_coupons_expire</code>、<code>da_ds_account_0111</code>（12 列画像宽表）、<code>da_ds_account_variable</code> 及 <code>_0111</code>/<code>_1109</code> 两个副本；另由 v2 首次灌数的是 <code>account_selfitem_income</code>（8% 持仓 × 20 个月）。</li>
+        <li><strong>验收</strong>：脚本末尾两张查询——各关键列缺失率（应 ≤5%）+ 新表行数（0111 / variable ≈ 20000，selfitem_income ≈ 8 万）。</li>
+        <li><strong>遗留</strong>：「月报」里的 <code>account_cashout</code>（提现表）仍未建——提现直接用 <code>account_trade</code>（biztype=4, inouttype=2）取数即可；<code>account_partner_month*</code> 未建（合伙人月表，可自行聚合练手）。</li>
+      </ul>
+    </section>
+
+    <section id="appendix-b">
+      <h2><span class="num">19</span>附录 B · 版本记录</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>版本</th><th>变更</th></tr></thead>
+          <tbody>
+            <tr><td>v1</td><td>从 27 条 SQL 反推 27 张表结构 + 合成数据</td></tr>
+            <tr><td>v2</td><td><code>v2_数据补全.sql</code> 原地补全，真实缺失值 ≤5%；新增表与列；修 8 处脚本缺列</td></tr>
+            <tr><td>v3</td><td>新增修正版模板（年龄现算、两处原脚本 bug 修正）</td></tr>
+            <tr><td><strong>v3.1</strong></td><td>本次整理：订正年龄区间（1970–1998）、统一表数量（32 张）、SQL 别名规范化、新增使用说明 / 表清单 / 指标口径 / 报错排查、陷阱扩到 14 条</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    <div class="foot-in">
+      <div>
+        <p class="fb">P2P 数仓变量查询手册 v3.1</p>
+        <p>配套 p2p_learning 练习库 · MySQL 8.0 · 数据 100% 合成，无任何真实用户信息</p>
+      </div>
+      <div class="foot-meta">
+        snapshot 2016-01-11<br>
+        data range 2015-01 ~ 2016-08<br>
+        updated 2026-10-23
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var doc = document;
+  var navLinks = Array.prototype.slice.call(doc.querySelectorAll(".nav-link"));
+  var sections = Array.prototype.slice.call(doc.querySelectorAll("main section[id]"));
+  var bar = doc.getElementById("bar");
+  var sb = doc.getElementById("sb");
+  var scrim = doc.getElementById("scrim");
+  var btn = doc.getElementById("menuBtn");
+  var input = doc.getElementById("navSearch");
+  var currentId = "";
+  var ticking = false;
+  var navBox = null;
+
+  function setActive(id) {
+    if (!id || id === currentId) { return; }
+    currentId = id;
+    for (var i = 0; i < navLinks.length; i++) {
+      var link = navLinks[i];
+      var on = link.getAttribute("href") === "#" + id;
+      link.className = on ? "nav-link is-active" : "nav-link";
+      if (on) {
+        link.setAttribute("aria-current", "true");
+        navBox = navBox || sb.querySelector(".sb-nav");
+        if (navBox) {
+          var lr = link.getBoundingClientRect();
+          var br = navBox.getBoundingClientRect();
+          if (lr.top < br.top + 24 || lr.bottom > br.bottom - 24) {
+            navBox.scrollTop += (lr.top - br.top) - navBox.clientHeight / 2 + lr.height / 2;
+          }
+        }
+      } else {
+        link.removeAttribute("aria-current");
+      }
+    }
+  }
+
+  function onScroll() {
+    if (ticking) { return; }
+    ticking = true;
+    window.requestAnimationFrame(function () {
+      ticking = false;
+      var y = window.pageYOffset || doc.documentElement.scrollTop || 0;
+      var h = doc.documentElement.scrollHeight - window.innerHeight;
+      if (bar) { bar.style.width = (h > 0 ? Math.min(100, (y / h) * 100) : 0) + "%"; }
+      var active = sections.length ? sections[0].id : "";
+      for (var i = 0; i < sections.length; i++) {
+        if (sections[i].getBoundingClientRect().top <= 120) { active = sections[i].id; } else { break; }
+      }
+      setActive(active);
+    });
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+
+  function openMenu() {
+    sb.classList.add("is-open");
+    scrim.classList.add("is-on");
+    btn.setAttribute("aria-expanded", "true");
+  }
+  function closeMenu() {
+    sb.classList.remove("is-open");
+    scrim.classList.remove("is-on");
+    btn.setAttribute("aria-expanded", "false");
+  }
+  if (btn) {
+    btn.addEventListener("click", function () {
+      if (sb.classList.contains("is-open")) { closeMenu(); } else { openMenu(); }
+    });
+  }
+  if (scrim) { scrim.addEventListener("click", closeMenu); }
+
+  for (var k = 0; k < navLinks.length; k++) {
+    navLinks[k].addEventListener("click", function () {
+      if (window.innerWidth <= 900) { closeMenu(); }
+    });
+  }
+
+  doc.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { closeMenu(); }
+    if (e.key === "/" && input && doc.activeElement !== input) {
+      e.preventDefault();
+      input.focus();
+      input.select();
+    }
+  });
+
+  if (input) {
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase();
+      var groups = Array.prototype.slice.call(doc.querySelectorAll(".nav-group"));
+      for (var g = 0; g < groups.length; g++) {
+        var group = groups[g];
+        var shown = 0;
+        var node = group.nextElementSibling;
+        while (node && node.className.indexOf("nav-group") === -1) {
+          if (node.className.indexOf("nav-link") > -1) {
+            var hit = !q || node.textContent.toLowerCase().indexOf(q) > -1;
+            node.style.display = hit ? "" : "none";
+            if (hit) { shown++; }
+          }
+          node = node.nextElementSibling;
+        }
+        group.style.display = (shown || !q) ? "" : "none";
+      }
+    });
+  }
+
+  var copies = Array.prototype.slice.call(doc.querySelectorAll(".copy"));
+  function fallbackCopy(text, el) {
+    try {
+      var ta = doc.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      doc.body.appendChild(ta);
+      ta.select();
+      doc.execCommand("copy");
+      doc.body.removeChild(ta);
+      flash(el);
+    } catch (err) { /* 静默失败：用户可手动选中 */ }
+  }
+  function flash(el) {
+    var old = el.textContent;
+    el.textContent = "已复制";
+    el.className = "copy done";
+    window.setTimeout(function () {
+      el.textContent = old;
+      el.className = "copy";
+    }, 1400);
+  }
+  for (var c = 0; c < copies.length; c++) {
+    copies[c].addEventListener("click", function () {
+      var el = this;
+      var block = el.closest ? el.closest(".code") : null;
+      var target = block ? block.querySelector("code") : null;
+      var text = target ? target.textContent : "";
+      if (!text) { return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          flash(el);
+        })["catch"](function () {
+          fallbackCopy(text, el);
+        });
+      } else {
+        fallbackCopy(text, el);
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
